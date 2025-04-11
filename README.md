@@ -25,14 +25,7 @@ git clone <your-repo-url>
 cd MediQuery
 ```
 
-### 2. Create and activate a virtual environment (optional but recommended)
-
-```bash
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
-
-### 3. Install dependencies
+### 2. Install dependencies
 
 Make sure you have Python 3 installed. Then install required packages:
 
@@ -40,14 +33,14 @@ Make sure you have Python 3 installed. Then install required packages:
 pip install -r requirements.txt
 ```
 
-### 4. Set up the database
+### 3. Set up the database
 
 - Download the required database file from the link below:  
   [Download MediQueryData.db](https://drive.google.com/file/d/1WwowTkYJjeIlwpS7GCc-vGF2VCwFgcF3/view?usp=sharing)
 
 - Replace the placeholder `MediQueryData.db` inside the `data/` directory with the downloaded file.
 
-### 5. Install and configure Ollama
+### 4. Install and configure Ollama
 
 - Download and install Ollama: https://ollama.com
 - Pull any large language model (e.g., DeepSeek, LLaMA2, Mistral):
