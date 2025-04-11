@@ -10,7 +10,7 @@ MediQuery is an AI-powered symptom checker chatbot that helps users identify pot
 
    [Download database](https://drive.google.com/file/d/1WwowTkYJjeIlwpS7GCc-vGF2VCwFgcF3/view?usp=sharing)
 
-4. Replace the placeholder file inside the `data/` directory with the downloaded database file.
+4. Replace the placeholder "MediQueryData.db" file inside the `data/` directory with the downloaded database file.
 
 ## Usage
 
