@@ -1,6 +1,3 @@
-Here’s your complete, detailed `README.md` file content in Markdown format:
-
-```markdown
 # MediQuery
 
 MediQuery is an AI-powered symptom checker chatbot that helps users identify potential health conditions based on their described symptoms.
