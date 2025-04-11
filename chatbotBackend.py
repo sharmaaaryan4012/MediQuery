@@ -11,7 +11,7 @@ import pandas as pd
 import re
 import sqlite3
 
-DB_PATH = "data/data.db"
+DB_PATH = "data/MediQueryData.db"
 MODEL_NAME = "deepseek-r1:8b"
 
 SYMPTOMS = {
