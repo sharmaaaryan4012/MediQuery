@@ -21,7 +21,7 @@ This project was developed during my internship at the **Applied Technologies fo
 ### 1. Clone the repository
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/sharmaaaryan4012/MediQuery
 cd MediQuery
 ```
 
