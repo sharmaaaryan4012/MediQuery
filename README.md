@@ -18,3 +18,5 @@ Run the Flask app locally:
 
 ```bash
 python3 app.py
+```
+Open your browser and navigate to [http://127.0.0.1:5000](http://127.0.0.1:5000) to access the web app.
