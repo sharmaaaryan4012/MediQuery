@@ -1,1 +1,102 @@
+<!--
+    Author:         Aaryan Sharma
+    Date:           April 5th, 2025
+    File:           index.html
+    Description:    This file is the main page of the flask app.
+-->
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MedBot - Your AI Symptom Checker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="chat-wrapper">
+        <header>
+            <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Medical Icon">
+            <h1>MediQuery</h1>
+        </header>
+
+        <div class="chat-container" id="chat-box">
+        </div>
+
+        <form id="chat-form" class="chat-input">
+            <div style="width: 100%; display: flex; justify-content: center;">
+                <input type="text" id="user-input" placeholder="Describe your symptom" required style="width: 65%; margin-bottom: 10px;">
+            </div>
+            <input type="text" id="city" placeholder="City (optional)">
+            <input type="text" id="zipcode" placeholder="ZIP Code (optional)">
+            <button type="submit">Send</button>
+        </form>
+
+        <footer>
+            This chatbot can make mistakes. The results are mere suggestions.
+        </footer>
+    </div>
+
+    <script>
+        const chatForm = document.getElementById("chat-form");
+        const chatBox = document.getElementById("chat-box");
+
+        chatForm.addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const userInput = document.getElementById("user-input").value;
+            const city = document.getElementById("city").value;
+            const zipcode = document.getElementById("zipcode").value;
+
+            chatBox.innerHTML += `<div class="message user-msg"><span>You:</span> ${userInput}</div>`;
+
+            const res = await fetch("/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: userInput, city, zipcode })
+            });
+
+            const data = await res.json();
+
+            let botReply = `<div class="message bot-msg"><span>MedBot:</span><br>`;
+
+            if (data.symptoms.length)
+                botReply += `Symptoms: <b>${data.symptoms.join(', ')}</b><br>`;
+
+            if (data.unrecognized.length)
+                botReply += `Unrecognized: ${data.unrecognized.join(', ')}<br>`;
+
+            if (data.diseases.length) {
+                botReply += `Possible Diagnoses:<br>`;
+                data.diseases.forEach(d => {
+                    botReply += `→ <b>${d.disease}</b> (score: ${d.score})<br>`;
+                });
+            }
+
+            if (data.llm_result) {
+                botReply += `LLM Guess: <b>${data.llm_result.disease}</b> (${data.llm_result.specialization})<br>`;
+            }
+
+            if (data.doctors_by_specialization.length) {
+                botReply += `<br><u>Nearby Doctors:</u><br>`;
+                data.doctors_by_specialization.forEach(group => {
+                    botReply += `<strong>${group.specialization}</strong><br>`;
+                    if (group.doctors.length === 0) {
+                        botReply += `No doctors found.<br>`;
+                    } else {
+                        group.doctors.forEach(doc => {
+                            botReply += `• ${doc.name} @ ${doc.facility} (${doc.location})<br>Phone: ${doc.phone}<br><br>`;
+                        });
+                    }
+                });
+            }
+
+            botReply += `</div>`;
+            chatBox.innerHTML += botReply;
+
+            document.getElementById("user-input").value = "";
+            chatBox.scrollTop = chatBox.scrollHeight;
+        });
+    </script>
+</body>
+</html>
