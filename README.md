@@ -2,7 +2,7 @@
 
 MediQuery is an AI-powered symptom checker chatbot that helps users identify potential health conditions based on their described symptoms.
 
-This project was developed during my internship at the **Applied Technologies for Learning in the Arts & Sciences (ATLAS)** at the **University of Illinois Urbana-Champaign**.
+This project was developed during my internship at the Applied Technologies for Learning in the Arts & Sciences (ATLAS) at the University of Illinois Urbana-Champaign.
 
 ---
 
