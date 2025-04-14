@@ -8,7 +8,7 @@ This project was developed during my internship at the **Applied Technologies fo
 
 ## Features
 
-- Symptom extraction using a local LLM via [Ollama](https://ollama.com/)
+- Symptom extraction using a local LLM via [Ollama](https://ollama.com/) or Gemini API
 - Disease matching from a local medical database
 - Medical specialization mapping
 - Nearby doctor recommendations based on ZIP code or city
@@ -40,20 +40,37 @@ pip install -r requirements.txt
 
 - Replace the placeholder `MediQueryData.db` inside the `data/` directory with the downloaded file.
 
-### 4. Install and configure Ollama
+### 4. Choose a Language Model Backend
+
+You have **two options** for enabling the AI functionality in MediQuery:
+
+#### Option 1: Use a local LLM via Ollama
 
 - Download and install Ollama: https://ollama.com
-- Pull any large language model (e.g., DeepSeek, LLaMA2, Mistral):
+- Pull a model of your choice (e.g., DeepSeek, LLaMA2, Mistral):
 
 ```bash
 ollama pull deepseek
 ```
 
-- Update the `MODEL_NAME` variable in `chatbotBackend.py` to match the name of the model you installed:
+- Update the `MODEL_NAME` variable in `chatbotBackend.py` to match the model you pulled:
 
 ```python
-MODEL_NAME = "deepseek-r1:8b"  # or any other local LLM name from Ollama
+MODEL_NAME = "deepseek-r1:8b"
 ```
+
+Make sure the Ollama server is running in the background.
+
+#### Option 2: Use Gemini via API Key
+
+- Create a file named `api.env` in the root directory.
+- Add your Gemini API key to it in the following format:
+
+```
+GEMINI_API_KEY=your_api_key_here
+```
+
+- The app will detect this environment variable and use Gemini for LLM responses.
 
 ---
 
@@ -84,7 +101,8 @@ Dependencies are listed in `requirements.txt`.
 ## Notes
 
 - This app uses a local SQLite database stored in `data/MediQueryData.db`.
-- Ollama must be running in the background for the LLM-based diagnosis features to work.
+- Ollama must be running in the background **if you’re using local LLMs**.
+- If you’re using **Gemini**, only an API key is needed—no additional downloads.
 - The doctor recommendation system queries a cleaned and structured healthcare provider database by specialization and location.
 
 ---
