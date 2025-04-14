@@ -7,8 +7,8 @@
 
 
 from flask import Flask, render_template, request, jsonify
-from chatbotBackend import extract_symptoms, match_diseases, get_llm_diagnosis, get_specialization, get_doctors, format_phone               # INCLUDE THIS for OLLAMA models.
-from chatbotBackendAPI import extract_symptoms, match_diseases, get_llm_diagnosis, get_specialization, get_doctors, format_phone            # INCLUDE THIS for GEMINI models.
+# from chatbotBackend import extract_symptoms, match_diseases, get_llm_diagnosis, get_specialization, get_doctors, format_phone               # INCLUDE THIS for OLLAMA models.
+# from chatbotBackendAPI import extract_symptoms, match_diseases, get_llm_diagnosis, get_specialization, get_doctors, format_phone            # INCLUDE THIS for GEMINI models.
 
 app = Flask(__name__)
 
