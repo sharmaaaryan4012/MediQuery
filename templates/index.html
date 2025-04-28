@@ -20,12 +20,12 @@
             <h1>MediQuery</h1>
         </header>
 
-        <div class="chat-container" id="chat-box">
-        </div>
+        <div class="chat-container" id="chat-box"></div>
 
         <form id="chat-form" class="chat-input">
             <div style="width: 100%; display: flex; justify-content: center;">
-                <input type="text" id="user-input" placeholder="Describe your symptom" required style="width: 65%; margin-bottom: 10px;">
+                <input type="text" id="user-input" placeholder="Describe your symptom" required
+                       style="width: 65%; margin-bottom: 10px;">
             </div>
             <input type="text" id="city" placeholder="City (optional)">
             <input type="text" id="zipcode" placeholder="ZIP Code (optional)">
@@ -37,46 +37,108 @@
         </footer>
     </div>
 
-    <script>
-        const chatForm = document.getElementById("chat-form");
-        const chatBox = document.getElementById("chat-box");
+    <div id="feedback-modal" class="modal hidden">
+      <div class="modal-overlay"></div>
+      <div class="modal-content">
+        <button class="modal-close" title="Close">×</button>
 
+        <form id="reason-form" class="feedback-step">
+          <p>Is the reason a discrepancy between the database output and the LLM's guess?</p>
+          <div class="feedback-buttons">
+            <button type="button" class="modal-btn yes" data-action="reason-yes">Yes</button>
+            <button type="button" class="modal-btn no" data-action="reason-no">No</button>
+          </div>
+        </form>
+
+        <form id="improvement-form" class="feedback-step hidden">
+          <p>Would you like to add the LLM's guess to the database for a better result?</p>
+          <div class="feedback-buttons">
+            <button type="button" class="modal-btn yes" data-action="improve-yes">Yes</button>
+            <button type="button" class="modal-btn no" data-action="improve-no">No</button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+
+    <script>
+        const feedbackModal = document.getElementById('feedback-modal');
+        const reasonForm = document.getElementById('reason-form');
+        const improvementForm = document.getElementById('improvement-form');
+        const closeButtons = document.querySelectorAll('.modal-close, .modal-overlay');
+        const chatBox = document.getElementById('chat-box');
+
+        function disableRatings() {
+            document.querySelectorAll('.rating-btn').forEach(btn => {
+                btn.disabled = true;
+            });
+        }
+
+        document.addEventListener('click', e => {
+            if (e.target.classList.contains('down') && !e.target.disabled) {
+                feedbackModal.classList.remove('hidden');
+            }
+        });
+
+        closeButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                hideAllSteps();
+                feedbackModal.classList.add('hidden');
+            });
+        });
+
+        function hideAllSteps() {
+            reasonForm.classList.add('hidden');
+            improvementForm.classList.add('hidden');
+        }
+
+        reasonForm.addEventListener('click', e => {
+            if (!e.target.matches('button[data-action]')) return;
+            const action = e.target.getAttribute('data-action');
+            if (action === 'reason-yes') {
+                reasonForm.classList.add('hidden');
+                improvementForm.classList.remove('hidden');
+            } else {
+                hideAllSteps();
+                feedbackModal.classList.add('hidden');
+            }
+        });
+
+        improvementForm.addEventListener('click', e => {
+            if (!e.target.matches('button[data-action]')) return;
+            const action = e.target.getAttribute('data-action');
+            if (action === 'improve-yes') {
+                disableRatings();
+            }
+            hideAllSteps();
+            feedbackModal.classList.add('hidden');
+        });
+
+        const chatForm = document.getElementById("chat-form");
         chatForm.addEventListener("submit", async (e) => {
             e.preventDefault();
-
             const userInput = document.getElementById("user-input").value;
             const city = document.getElementById("city").value;
             const zipcode = document.getElementById("zipcode").value;
-
             chatBox.innerHTML += `<div class="message user-msg"><span>You:</span> ${userInput}</div>`;
-
             const res = await fetch("/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ message: userInput, city, zipcode })
             });
-
             const data = await res.json();
-
             let botReply = `<div class="message bot-msg"><span>MedBot:</span><br>`;
-
-            if (data.symptoms.length)
-                botReply += `Symptoms: <b>${data.symptoms.join(', ')}</b><br>`;
-
-            if (data.unrecognized.length)
-                botReply += `Unrecognized: ${data.unrecognized.join(', ')}<br>`;
-
+            if (data.symptoms.length) botReply += `Symptoms: <b>${data.symptoms.join(', ')}</b><br>`;
+            if (data.unrecognized.length) botReply += `Unrecognized: ${data.unrecognized.join(', ')}<br>`;
             if (data.diseases.length) {
                 botReply += `Possible Diagnoses:<br>`;
                 data.diseases.forEach(d => {
                     botReply += `→ <b>${d.disease}</b> (score: ${d.score})<br>`;
                 });
             }
-
             if (data.llm_result) {
                 botReply += `LLM Guess: <b>${data.llm_result.disease}</b> (${data.llm_result.specialization})<br>`;
             }
-
             if (data.doctors_by_specialization.length) {
                 botReply += `<br><u>Nearby Doctors:</u><br>`;
                 data.doctors_by_specialization.forEach(group => {
@@ -90,10 +152,13 @@
                     }
                 });
             }
-
-            botReply += `</div>`;
+            botReply += `
+                <div class="rating">
+                  <button class="rating-btn up" title="Helpful">👍</button>
+                  <button class="rating-btn down" title="Not helpful">👎</button>
+                </div>
+              </div>`;
             chatBox.innerHTML += botReply;
-
             document.getElementById("user-input").value = "";
             chatBox.scrollTop = chatBox.scrollHeight;
         });
