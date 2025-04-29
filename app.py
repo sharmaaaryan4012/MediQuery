@@ -6,10 +6,29 @@
 """
 
 from flask import Flask, render_template, request, jsonify
-# from chatbotBackend import extract_symptoms, match_diseases, get_llm_diagnosis, get_specialization, get_doctors, format_phone               # INCLUDE THIS for OLLAMA models.
-# from chatbotBackendAPI import extract_symptoms, match_diseases, get_llm_diagnosis, get_specialization, get_doctors, format_phone            # INCLUDE THIS for GEMINI models.
-
+# from chatbotBackend import extract_symptoms, match_diseases, get_llm_diagnosis, get_specialization, get_doctors, format_phone,  insert_disease_entry               # INCLUDE THIS for OLLAMA models.
+# from chatbotBackendAPI import extract_symptoms, match_diseases, get_llm_diagnosis, get_specialization, get_doctors, format_phone,  insert_disease_entry            # INCLUDE THIS for GEMINI models.
 app = Flask(__name__)
+
+@app.route("/feedback", methods=["POST"])
+def feedback():
+    data = request.get_json()
+    llm        = data.get("llm_result", {})
+    symptoms   = data.get("symptoms", [])
+
+    disease        = llm.get("disease")
+    specialization = llm.get("specialization")
+
+    print("\n" + "="*60)
+    print("  Adding LLM-approved disease to the DB:")
+    print(f"  Disease:            {disease}")
+    print(f"  Specialization:     {specialization}")
+    print(f"  Recognized Symptoms: {', '.join(symptoms) or 'None'}")
+    print("="*60 + "\n")
+
+    insert_disease_entry(disease, specialization, symptoms)
+
+    return ("", 204)
 
 @app.route("/")
 def index():
