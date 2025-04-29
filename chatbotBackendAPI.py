@@ -1,7 +1,7 @@
 """
     Author:         Aaryan Sharma
     Date:           April 14th, 2025
-    File:           chatbotBackend.py
+    File:           chatbotBackendAPI.py
     Description:    This file contains the backend chatbot logic.
 """
 
@@ -248,3 +248,32 @@ def get_llm_diagnosis(user_input):
             print(f"Error parsing LLM dictionary: {e}")
 
     return None
+
+
+def insert_disease_entry(disease: str, specialization: str, symptoms: list[str]):
+    conn = sqlite3.connect(DB_PATH)
+    cur  = conn.cursor()
+
+    cur.execute("PRAGMA table_info(Diseases)")
+    cols_info = sorted(cur.fetchall(), key=lambda r: r[0])
+    all_cols  = [info[1] for info in cols_info]
+
+    symptom_cols = [c for c in all_cols if c.startswith("Symptom_")]
+
+    values = []
+    for col in all_cols:
+        if col == "Disease":
+            values.append(disease)
+        elif col == "Specialization":
+            values.append(specialization)
+        elif col in symptom_cols:
+            idx = symptom_cols.index(col)
+            values.append(symptoms[idx] if idx < len(symptoms) else None)
+        else:
+            values.append(None)
+
+    placeholders = ", ".join("?" for _ in all_cols)
+    sql = f"INSERT INTO Diseases ({', '.join(all_cols)}) VALUES ({placeholders})"
+    cur.execute(sql, values)
+    conn.commit()
+    conn.close()
