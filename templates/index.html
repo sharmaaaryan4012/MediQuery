@@ -62,106 +62,130 @@
     </div>
 
     <script>
-        const feedbackModal = document.getElementById('feedback-modal');
-        const reasonForm = document.getElementById('reason-form');
-        const improvementForm = document.getElementById('improvement-form');
-        const closeButtons = document.querySelectorAll('.modal-close, .modal-overlay');
-        const chatBox = document.getElementById('chat-box');
+      let latestChatData = null;
 
-        function disableRatings() {
-            document.querySelectorAll('.rating-btn').forEach(btn => {
-                btn.disabled = true;
-            });
+      const feedbackModal    = document.getElementById('feedback-modal');
+      const reasonForm       = document.getElementById('reason-form');
+      const improvementForm  = document.getElementById('improvement-form');
+      const closeButtons     = document.querySelectorAll('.modal-close, .modal-overlay');
+      const chatBox          = document.getElementById('chat-box');
+
+      function disableRatings() {
+        document.querySelectorAll('.rating-btn').forEach(btn => {
+          btn.disabled = true;
+        });
+      }
+
+      function resetSteps() {
+        reasonForm.classList.remove('hidden');
+        improvementForm.classList.add('hidden');
+      }
+
+      document.addEventListener('click', e => {
+        if (e.target.classList.contains('down') && !e.target.disabled) {
+          resetSteps();
+          feedbackModal.classList.remove('hidden');
+        }
+      });
+
+      closeButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          resetSteps();
+          feedbackModal.classList.add('hidden');
+        });
+      });
+
+      reasonForm.addEventListener('click', e => {
+        if (!e.target.matches('button[data-action]')) return;
+        const action = e.target.getAttribute('data-action');
+        if (action === 'reason-yes') {
+          reasonForm.classList.add('hidden');
+          improvementForm.classList.remove('hidden');
+        } else {
+          resetSteps();
+          feedbackModal.classList.add('hidden');
+        }
+      });
+
+      improvementForm.addEventListener('click', async (e) => {
+        if (!e.target.matches('button[data-action]')) return;
+        const action = e.target.getAttribute('data-action');
+
+        if (action === 'improve-yes' && latestChatData && latestChatData.llm_result) {
+          const payload = {
+            llm_result: latestChatData.llm_result,
+            symptoms: latestChatData.symptoms
+          };
+
+          await fetch("/feedback", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+
+          disableRatings();
         }
 
-        document.addEventListener('click', e => {
-            if (e.target.classList.contains('down') && !e.target.disabled) {
-                feedbackModal.classList.remove('hidden');
-            }
-        });
+        resetSteps();
+        feedbackModal.classList.add('hidden');
+      });
 
-        closeButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                hideAllSteps();
-                feedbackModal.classList.add('hidden');
-            });
-        });
+      const chatForm = document.getElementById("chat-form");
+      chatForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
 
-        function hideAllSteps() {
-            reasonForm.classList.add('hidden');
-            improvementForm.classList.add('hidden');
+        const userInput = document.getElementById("user-input").value;
+        const city      = document.getElementById("city").value;
+        const zipcode   = document.getElementById("zipcode").value;
+
+        chatBox.innerHTML += `<div class="message user-msg"><span>You:</span> ${userInput}</div>`;
+
+        const res   = await fetch("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: userInput, city, zipcode })
+        });
+        const data  = await res.json();
+        latestChatData = data;  // store for feedback
+
+        let botReply = `<div class="message bot-msg"><span>MedBot:</span><br>`;
+        if (data.symptoms.length)      botReply += `Symptoms: <b>${data.symptoms.join(', ')}</b><br>`;
+        if (data.unrecognized.length)  botReply += `Unrecognized: ${data.unrecognized.join(', ')}<br>`;
+        if (data.diseases.length) {
+          botReply += `Possible Diagnoses:<br>`;
+          data.diseases.forEach(d => {
+            botReply += `→ <b>${d.disease}</b> (score: ${d.score})<br>`;
+          });
         }
-
-        reasonForm.addEventListener('click', e => {
-            if (!e.target.matches('button[data-action]')) return;
-            const action = e.target.getAttribute('data-action');
-            if (action === 'reason-yes') {
-                reasonForm.classList.add('hidden');
-                improvementForm.classList.remove('hidden');
+        if (data.llm_result) {
+          botReply += `LLM Guess: <b>${data.llm_result.disease}</b> (${data.llm_result.specialization})<br>`;
+        }
+        if (data.doctors_by_specialization.length) {
+          botReply += `<br><u>Nearby Doctors:</u><br>`;
+          data.doctors_by_specialization.forEach(group => {
+            botReply += `<strong>${group.specialization}</strong><br>`;
+            if (group.doctors.length === 0) {
+              botReply += `No doctors found.<br>`;
             } else {
-                hideAllSteps();
-                feedbackModal.classList.add('hidden');
+              group.doctors.forEach(doc => {
+                botReply += `• ${doc.name} @ ${doc.facility} (${doc.location})<br>Phone: ${doc.phone}<br><br>`;
+              });
             }
-        });
+          });
+        }
+        botReply += `
+          <div class="rating">
+            <button class="rating-btn up" title="Helpful">👍</button>
+            <button class="rating-btn down" title="Not helpful">👎</button>
+          </div>
+        </div>`;
 
-        improvementForm.addEventListener('click', e => {
-            if (!e.target.matches('button[data-action]')) return;
-            const action = e.target.getAttribute('data-action');
-            if (action === 'improve-yes') {
-                disableRatings();
-            }
-            hideAllSteps();
-            feedbackModal.classList.add('hidden');
-        });
+        chatBox.innerHTML += botReply;
+        document.getElementById("user-input").value = "";
+        chatBox.scrollTop = chatBox.scrollHeight;
+      });
 
-        const chatForm = document.getElementById("chat-form");
-        chatForm.addEventListener("submit", async (e) => {
-            e.preventDefault();
-            const userInput = document.getElementById("user-input").value;
-            const city = document.getElementById("city").value;
-            const zipcode = document.getElementById("zipcode").value;
-            chatBox.innerHTML += `<div class="message user-msg"><span>You:</span> ${userInput}</div>`;
-            const res = await fetch("/chat", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ message: userInput, city, zipcode })
-            });
-            const data = await res.json();
-            let botReply = `<div class="message bot-msg"><span>MedBot:</span><br>`;
-            if (data.symptoms.length) botReply += `Symptoms: <b>${data.symptoms.join(', ')}</b><br>`;
-            if (data.unrecognized.length) botReply += `Unrecognized: ${data.unrecognized.join(', ')}<br>`;
-            if (data.diseases.length) {
-                botReply += `Possible Diagnoses:<br>`;
-                data.diseases.forEach(d => {
-                    botReply += `→ <b>${d.disease}</b> (score: ${d.score})<br>`;
-                });
-            }
-            if (data.llm_result) {
-                botReply += `LLM Guess: <b>${data.llm_result.disease}</b> (${data.llm_result.specialization})<br>`;
-            }
-            if (data.doctors_by_specialization.length) {
-                botReply += `<br><u>Nearby Doctors:</u><br>`;
-                data.doctors_by_specialization.forEach(group => {
-                    botReply += `<strong>${group.specialization}</strong><br>`;
-                    if (group.doctors.length === 0) {
-                        botReply += `No doctors found.<br>`;
-                    } else {
-                        group.doctors.forEach(doc => {
-                            botReply += `• ${doc.name} @ ${doc.facility} (${doc.location})<br>Phone: ${doc.phone}<br><br>`;
-                        });
-                    }
-                });
-            }
-            botReply += `
-                <div class="rating">
-                  <button class="rating-btn up" title="Helpful">👍</button>
-                  <button class="rating-btn down" title="Not helpful">👎</button>
-                </div>
-              </div>`;
-            chatBox.innerHTML += botReply;
-            document.getElementById("user-input").value = "";
-            chatBox.scrollTop = chatBox.scrollHeight;
-        });
     </script>
+
 </body>
 </html>
